@@ -69,7 +69,7 @@ export const fetchNotes = async (
       ...(tag && tag !== "All" ? { tag } : {}),
   };
 
-  const response = await api.get<NOTEHUBResponse>(`/notes?${params.toString()}`);
+  const response = await api.get<NOTEHUBResponse>("/notes", { params });
   return response.data;
 };
 
