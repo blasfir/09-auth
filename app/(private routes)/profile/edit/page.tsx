@@ -3,40 +3,38 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import css from '.EditProfilePage.module.css'; 
-import { api } from '@/lib/api/api';
-import { User } from '@/types/user';
+import css from './EditProfilePage.module.css'; 
+import { useAuthStore } from '@/lib/store/authStore';
+import { updateMe, UpdateRequest } from "@/lib/api/clientApi";
+import { isAxiosError } from 'axios';
 
 export default function EditProfilePage() {
   const router = useRouter();
-
-  const [user, setUser] = useState<User | null>(null);
-  const [username, setUsername] = useState('');
-  const [loading, setLoading] = useState(true);
+  const user = useAuthStore(state => state.user);
+  const setUser = useAuthStore(state => state.setUser);
+  const [username, setUsername] = useState(user?.username ?? '');
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const { data } = await api.get<User>('/users/me');
-        setUser(data);
-        setUsername(data.username);
-      } catch (error) {
-        console.error('Failed to fetch user', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUser();
-  }, []);
+    if (user) setUsername(user.username);
+  }, [user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
     try {
-      await api.patch('/users/me', { username });
-      router.push('/profile'); 
-    } catch (error) {
-      console.error('Failed to update user', error);
+      const payload: UpdateRequest = { username };
+      const updatedUser = await updateMe(payload);
+      if (updatedUser) {
+        setUser(updatedUser);
+        router.push('/profile');
+      }
+    } catch (err) {
+      if (isAxiosError(err)) {
+        setError(err.message);
+      } else {
+        setError('Internal Server Error');
+      }
     }
   };
 
@@ -44,8 +42,7 @@ export default function EditProfilePage() {
     router.push('/profile');
   };
 
-  if (loading) return <p>Loading...</p>;
-  if (!user) return <p>User not found</p>;
+  if (!user) return <p>Loading...</p>;
 
   return (
     <main className={css.mainContent}>
@@ -65,6 +62,7 @@ export default function EditProfilePage() {
             <label htmlFor="username">Username:</label>
             <input
               id="username"
+              name="username"
               type="text"
               className={css.input}
               value={username}
@@ -86,8 +84,11 @@ export default function EditProfilePage() {
               Cancel
             </button>
           </div>
+
+          {error && <p className={css.error}>{error}</p>}
         </form>
       </div>
     </main>
   );
 }
+

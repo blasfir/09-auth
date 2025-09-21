@@ -2,10 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import Modal from "../../../../components/Modal/Modal";
+import Modal from "@/components/Modal/Modal";
 import css from "./NotePreview.module.css";
-import { fetchNoteById } from "../../../../lib/api";
-import type { Note } from "../../../../types/note";
+import { fetchNoteById } from "@/lib/api/clientApi";
+import type { Note } from "@/types/note";
 
 interface NotePreviewProps {
   id: string;
